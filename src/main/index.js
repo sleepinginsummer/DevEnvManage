@@ -4,7 +4,7 @@ import { promisify } from 'util'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-
+import fs from 'fs'
 const execAsync = promisify(exec)
 
 async function runPowerShellCommand(command) {
@@ -22,6 +22,41 @@ async function runPowerShellCommand(command) {
     return { success: false, error: error.message }
   }
 }
+
+async function runPowerShellCommandWithWindow(command) {
+  try {
+    // 创建一个临时的 PS1 脚本文件
+    const scriptContent = `
+    $userPath = [System.Environment]::GetEnvironmentVariable('Path', 'User')
+    $systemPath = [System.Environment]::GetEnvironmentVariable('Path', 'Machine')
+    $env:Path = "$userPath;$systemPath"
+    ${command}
+    `
+    const tempFile = join(app.getPath('temp'), 'temp_script.ps1')
+    await fs.promises.writeFile(tempFile, scriptContent)
+    
+    // 直接执行脚本文件
+    const { stdout, stderr } = await execAsync(`powershell -WindowStyle Hidden -File "${tempFile}"`)
+    
+    // 清理临时文件
+    await fs.promises.unlink(tempFile)
+    
+    console.log('PowerShell result:', command)
+    console.log('PowerShell stdout:', stdout)
+    console.log('PowerShell stderr:', stderr)
+    return { success: true, data: stdout || stderr }
+  } catch (error) {
+    console.error('PowerShell error:', command)
+    console.error('error info:', error.message)
+    dialog.showErrorBox('PowerShell', `执行命令 "${command}" 时发生错误：\n${error.message}`)
+    return { success: false, error: error.message }
+  }
+}
+
+// 注册新的 IPC 处理程序
+ipcMain.handle('run-powershell-window', async (_, command) => {
+  return await runPowerShellCommandWithWindow(command)
+})
 
 // 在 app.whenReady().then() 中添加
 ipcMain.handle('run-powershell', async (_, command) => {

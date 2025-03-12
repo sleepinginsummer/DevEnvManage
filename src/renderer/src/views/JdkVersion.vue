@@ -101,7 +101,7 @@ false
 async function getCurrentJavaVersion() {
   try {
     // 使用新的 PowerShell 会话获取 Java 版本
-    const result = await window.electron.ipcRenderer.invoke('run-powershell', 'java -version')
+    const result = await window.electron.ipcRenderer.invoke('run-powershell-window', 'java -version')
     if (result.success) {
       currentJavaVersion.value = parseJavaVersion(result.data)
     }
