@@ -1,0 +1,67 @@
+{
+  "name": "electron-app",
+  "version": "1.0.0",
+  "description": "An Electron application with Vue",
+  "main": "./out/main/index.js",
+  "author": "example.com",
+  "homepage": "https://electron-vite.org",
+  "scripts": {
+    "format": "prettier --write .",
+    "lint": "eslint --cache .",
+    "start": "electron-vite preview",
+    "dev": "electron-vite dev",
+    "build": "electron-vite build && electron-builder",
+    "postinstall": "electron-builder install-app-deps",
+    "build:unpack": "npm run build && electron-builder --dir",
+    "build:win": "electron-vite build && electron-builder --win",
+    "build:mac": "npm run build && electron-builder --mac",
+    "build:linux": "npm run build && electron-builder --linux"
+  },
+  "dependencies": {
+    "@electron-toolkit/preload": "^3.0.1",
+    "@electron-toolkit/utils": "^4.0.0",
+    "electron-updater": "^6.3.9",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@electron-toolkit/eslint-config": "^2.0.0",
+    "@electron-toolkit/eslint-config-prettier": "^3.0.0",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "electron": "^34.2.0",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^3.0.0",
+    "eslint": "^9.20.1",
+    "eslint-plugin-vue": "^9.32.0",
+    "prettier": "^3.5.1",
+    "vite": "^6.1.0",
+    "vue": "^3.5.13"
+  },
+  "build": {
+    "appId": "com.your-name.jdk-manager",
+    "productName": "JDK Manager",
+    "directories": {
+      "output": "dist_electron"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "allowElevation": true,
+      "perMachine": true
+    }
+  }
+}
