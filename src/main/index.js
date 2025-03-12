@@ -158,3 +158,44 @@ ipcMain.handle('restart-app', () => {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+
+// 在适当的位置添加以下代码
+const { spawn } = require('child_process')
+
+// 添加 IPC 处理程序
+ipcMain.handle('run-powershell-realtime', async (event, command) => {
+  return new Promise((resolve) => {
+    const powershell = spawn('powershell.exe', ['-Command', command], {
+      shell: true
+    })
+    
+    let stdoutData = ''
+    let stderrData = ''
+    
+    powershell.stdout.on('data', (data) => {
+      const output = data.toString()
+      stdoutData += output
+      // 发送实时输出到渲染进程
+      event.sender.send('powershell-output', output.trim())
+    })
+    
+    powershell.stderr.on('data', (data) => {
+      const output = data.toString()
+      stderrData += output
+      // 发送错误输出到渲染进程
+      event.sender.send('powershell-output', `错误: ${output.trim()}`)
+    })
+    
+    powershell.on('close', (code) => {
+      if (code === 0) {
+        resolve({ success: true, data: stdoutData })
+      } else {
+        resolve({ success: false, error: stderrData || '执行命令失败' })
+      }
+    })
+    
+    powershell.on('error', (error) => {
+      resolve({ success: false, error: error.message })
+    })
+  })
+})

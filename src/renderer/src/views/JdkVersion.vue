@@ -111,11 +111,29 @@
         </span>
       </template>
     </el-dialog>
+     <!-- 添加新的日志对话框 -->
+     <el-dialog
+      v-model="showLogDialog"
+      title="安装日志"
+      width="70%"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :show-close="!installInProgress"
+    >
+      <div class="log-container">
+        <pre class="log-content" ref="logContentRef">{{ installLog }}</pre>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="closeLogDialog" :disabled="installInProgress">关闭</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 
 const isScoopInstalled = ref(false)
@@ -125,6 +143,28 @@ const switching = ref(false)
 const jdkList = ref([])
 const currentJavaVersion = ref('')
 
+
+// 添加日志相关的状态变量
+const showLogDialog = ref(false)
+const installLog = ref('')
+const installInProgress = ref(false)
+const logContentRef = ref(null)
+
+// 关闭日志对话框
+function closeLogDialog() {
+  if (!installInProgress.value) {
+    showLogDialog.value = false
+    installLog.value = ''
+  }
+}
+
+// 滚动日志到底部
+watch(installLog, async () => {
+  await nextTick()
+  if (logContentRef.value) {
+    logContentRef.value.scrollTop = logContentRef.value.scrollHeight
+  }
+})
 // 检查 Scoop 安装状态
 async function checkScoopInstallation() {
   const result = await window.electron.ipcRenderer.invoke('run-powershell', 'scoop --version')
@@ -297,17 +337,41 @@ function parseAvailableJdks(output) {
 // 安装 JDK
 async function installJdk(jdkName) {
   installingJdk.value = jdkName
+  installInProgress.value = true
+  installLog.value = `开始安装 ${jdkName}...\n`
+  showLogDialog.value = true
+  
   try {
-    const result = await window.electron.ipcRenderer.invoke('run-powershell', `scoop install ${jdkName}`)
+    // 设置事件监听器接收实时日志
+    const handleOutput = (data) => {
+      installLog.value += data + '\n'
+    }
+    
+    // 添加事件监听器
+    const removeListener = window.electron.ipcRenderer.on('powershell-output', handleOutput)
+    
+    // 使用新的方法执行带实时输出的命令
+    const result = await window.electron.ipcRenderer.invoke('run-powershell-realtime', `scoop install ${jdkName}`)
+    
+    // 移除事件监听器 - 使用返回的函数而不是直接调用removeListener
+    if (typeof removeListener === 'function') {
+      removeListener()
+    }
+    
     if (result.success) {
       await getJdkList()
-      closeInstallDialog()
       ElMessage.success('JDK 安装成功')
+      installLog.value += '✅ 安装完成！\n'
+    } else {
+      throw new Error(result.error)
     }
   } catch (error) {
+    console.log(error)
+    installLog.value += `❌ 安装失败: ${error.message}\n`
     ElMessage.error('安装 JDK 失败: ' + error.message)
   } finally {
     installingJdk.value = ''
+    installInProgress.value = false
   }
 }
 
@@ -350,7 +414,21 @@ async function uninstallJdk(jdkName) {
 </script>
 
 <style scoped>
+.log-container {
+  background-color: #1e1e1e;
+  border-radius: 4px;
+  padding: 10px;
+  height: 400px;
+  overflow-y: auto;
+}
 
+.log-content {
+  color: #f0f0f0;
+  font-family: 'Courier New', monospace;
+  white-space: pre-wrap;
+  margin: 0;
+  line-height: 1.5;
+}
 .jdk-actions {
   display: flex;
   gap: 10px;

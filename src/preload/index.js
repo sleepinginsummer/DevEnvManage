@@ -12,7 +12,17 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('electron', {
       ...electronAPI,
       ipcRenderer: {
-        invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args)
+        invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
+        on(channel, callback) {
+          const subscription = (_event, ...args) => callback(...args)
+          // 这里错误地使用了 electron.ipcRenderer，应该使用导入的 ipcRenderer
+          ipcRenderer.on(channel, subscription)
+          
+          return () => {
+            // 这里也错误地使用了 electron.ipcRenderer
+            ipcRenderer.removeListener(channel, subscription)
+          }
+        }
       }
     })
     contextBridge.exposeInMainWorld('api', api)
