@@ -3,7 +3,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 const routes = [
   {
     path: '/',
-    redirect: '/jdkVersion'  // 添加重定向到 jdkVersion 页面
+    redirect: '/jdkManage'  // 添加重定向到 jdkVersion 页面
   },
   {
     path: '/about',
@@ -11,11 +11,15 @@ const routes = [
     component: () => import('../views/About.vue')
   },
   {
-    path: '/jdkVersion',
-    name: 'jdkVersion',
-    component: () => import('../views/JdkVersion.vue')
+    path: '/jdkManage',
+    name: 'jdkManage',
+    component: () => import('../views/jdkManage.vue')
   },
-  // 可以继续添加更多路由...
+  {
+    path: '/pythonManage',
+    name: 'pythonManage',
+    component: () => import('../views/pythonManage.vue')
+  },
 ]
 
 const router = createRouter({

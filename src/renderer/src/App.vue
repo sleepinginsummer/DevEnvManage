@@ -2,8 +2,8 @@
 import { ref } from 'vue'
 
 const menuItems = ref([
-  { name: 'jdk版本控制', path: '/jdkVersion' },
-  // { name: '首页', path: '/' },
+  { name: 'Jdk版本控制', path: '/jdkManage' },
+  { name: 'Python版本控制', path: '/pythonManage' },
   { name: '关于', path: '/about' }
 ])
 </script>

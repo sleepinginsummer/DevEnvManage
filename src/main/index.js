@@ -34,13 +34,13 @@ async function runPowerShellCommandWithWindow(command) {
     `
     const tempFile = join(app.getPath('temp'), 'temp_script.ps1')
     await fs.promises.writeFile(tempFile, scriptContent)
-    
+
     // 直接执行脚本文件
     const { stdout, stderr } = await execAsync(`powershell -WindowStyle Hidden -File "${tempFile}"`)
-    
+
     // 清理临时文件
     await fs.promises.unlink(tempFile)
-    
+
     console.log('PowerShell result:', command)
     console.log('PowerShell stdout:', stdout)
     console.log('PowerShell stderr:', stderr)
@@ -64,16 +64,29 @@ ipcMain.handle('run-powershell', async (_, command) => {
 })
 
 // 添加 run-cmd 处理程序
-ipcMain.handle('run-cmd', async (_, command) => {
+// 修改 run-cmd 处理程序，添加 showErrorDialog 参数
+ipcMain.handle('run-cmd', async (_, command, showErrorDialog = true) => {
+  console.log('Executing CMD command:', command)
   return new Promise((resolve) => {
     exec(command, { shell: 'cmd.exe', encoding: 'utf8' }, (error, stdout, stderr) => {
       if (error) {
+        console.error('CMD execution error:', error.message)
+        console.error('CMD stderr output:', stderr)
+
+        // 只有当 showErrorDialog 为 true 时才显示错误对话框
+        if (showErrorDialog) {
+          dialog.showErrorBox('CMD Execution Error', `Error executing command "${command}":\n${error.message}`)
+        }
+
         resolve({
           success: false,
           error: error.message,
           data: stderr
         })
       } else {
+        console.log('CMD execution successful')
+        console.log('CMD stdout:', stdout)
+        console.log('CMD stderr:', stderr)
         resolve({
           success: true,
           data: stderr || stdout // java -version 输出到 stderr
@@ -86,7 +99,7 @@ ipcMain.handle('run-cmd', async (_, command) => {
 function createWindow() {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 900,
+    width: 1060,
     height: 670,
     show: false,
     autoHideMenuBar: true,
@@ -170,28 +183,28 @@ ipcMain.handle('run-powershell-realtime', async (event, command) => {
       const powershell = spawn('powershell.exe', ['-Command', command], {
         shell: true
       })
-      
+
       // 获取进程ID
       const processId = powershell.pid
       console.log(`启动进程，PID: ${processId}，命令: ${command}`)
-      
+
       let stdoutData = ''
       let stderrData = ''
-      
+
       powershell.stdout.on('data', (data) => {
         const output = data.toString()
         stdoutData += output
         // 发送实时输出到渲染进程
         event.sender.send('powershell-output', output.trim())
       })
-      
+
       powershell.stderr.on('data', (data) => {
         const output = data.toString()
         stderrData += output
         // 发送错误输出到渲染进程
         event.sender.send('powershell-output', `错误: ${output.trim()}`)
       })
-      
+
       powershell.on('close', (code) => {
         console.log(`进程 ${processId} 已结束，退出码: ${code}`)
         if (code === 0) {
@@ -200,13 +213,66 @@ ipcMain.handle('run-powershell-realtime', async (event, command) => {
           resolve({ success: false, error: stderrData || '执行命令失败', processId })
         }
       })
-      
+
       powershell.on('error', (error) => {
         console.error(`进程 ${processId} 发生错误:`, error.message)
         resolve({ success: false, error: error.message, processId })
       })
     } catch (error) {
       console.error('启动进程时发生错误:', error)
+      resolve({ success: false, error: error.message, processId: 0 })
+    }
+  })
+})
+
+// 添加 CMD 实时输出处理程序
+ipcMain.handle('run-cmd-realtime', async (event, command) => {
+  return new Promise((resolve) => {
+    try {
+      const cmd = spawn('cmd.exe', ['/c', command], {
+        shell: true,
+        // 添加编码设置
+        env: { ...process.env, LANG: 'zh_CN.GBK', LC_ALL: 'zh_CN.GBK' }
+      })
+
+      // 获取进程ID
+      const processId = cmd.pid
+      console.log(`Starting process, PID: ${processId}, Command: ${command}`)
+
+      let stdoutData = ''
+      let stderrData = ''
+
+      cmd.stdout.on('data', (data) => {
+        // 使用 GBK 解码
+        const output = Buffer.from(data).toString('latin1')
+        stdoutData += output
+        // 发送实时输出到渲染进程
+        event.sender.send('powershell-output', output.trim())
+      })
+
+      cmd.stderr.on('data', (data) => {
+        // 使用 GBK 解码
+        const output = Buffer.from(data).toString('latin1')
+        stderrData += output
+        // 发送错误输出到渲染进程
+        event.sender.send('powershell-output', `Error: ${output.trim()}`)
+      })
+
+      cmd.on('close', (code) => {
+        console.log(`Process ${processId} ended, exit code: ${code}`)
+        if (code === 0) {
+          resolve({ success: true, data: stdoutData, processId })
+        } else {
+          resolve({ success: false, error: stderrData || 'Command execution failed', processId })
+        }
+      })
+
+      cmd.on('error', (error) => {
+        console.error(`Process ${processId} error:`, error.message)
+        resolve({ success: false, error: error.message, processId })
+      })
+    } catch (error) {
+      console.error('Error starting process:', error)
       resolve({ success: false, error: error.message, processId: 0 })
     }
   })
