@@ -1,6 +1,6 @@
-# electron-app
+# Development environment management tool
 
-An Electron application with Vue
+开发环境管理工具，用来管理切换jdk版本、python版本等
 
 ## Recommended IDE Setup
 
