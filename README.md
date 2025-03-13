@@ -1,6 +1,7 @@
 # Development environment management tool
 
-开发环境管理工具，用来管理切换jdk版本、python版本等
+开发环境管理工具，用来管理切换jdk版本、python版本等。
+仅适用于windows系统。安装包见Releases
 
 ## Recommended IDE Setup
 
