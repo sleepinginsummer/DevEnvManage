@@ -73,7 +73,7 @@
               @click="switchJdk(jdk.name)" 
               :loading="switching"
               type="primary"
-              size="small"
+              size="default"
             >
               {{ switching ? '切换中...' : '切换' }}
             </el-button>
@@ -81,7 +81,7 @@
               @click="uninstallJdk(jdk.name)"
               :loading="isJdkUninstalling(jdk.name)"
               type="danger"
-              size="small"
+              size="default"
             >
               {{ isJdkUninstalling(jdk.name) ? '卸载中...' : '卸载' }}
             </el-button>
@@ -509,10 +509,15 @@ async function uninstallJdk(jdkName) {
 }
 .jdk-actions {
   display: flex;
-  gap: 10px;
+  gap: -3px;  /* 从10px减小到5px */
   align-items: center;
 }
 
+.jdk-actions .el-button {
+  min-width: 80px;
+  padding: 8px 16px;
+  font-size: 14px;
+}
 .header {
   display: flex;
   justify-content: space-between;
