@@ -111,6 +111,37 @@ function createWindow() {
     }
   })
 
+  // 添加标准的编辑菜单，启用复制粘贴功能
+  const { Menu } = require('electron')
+  const template = [
+    {
+      label: '编辑',
+      submenu: [
+        { role: 'undo', label: '撤销' },
+        { role: 'redo', label: '重做' },
+        { type: 'separator' },
+        { role: 'cut', label: '剪切' },
+        { role: 'copy', label: '复制' },
+        { role: 'paste', label: '粘贴' },
+        { role: 'delete', label: '删除' },
+        { type: 'separator' },
+        { role: 'selectAll', label: '全选' }
+      ]
+    }
+  ]
+  const menu = Menu.buildFromTemplate(template)
+  Menu.setApplicationMenu(menu)
+
+  // 启用右键菜单
+  mainWindow.webContents.on('context-menu', (_, params) => {
+    const contextMenu = Menu.buildFromTemplate([
+      { role: 'copy', label: '复制' },
+      { role: 'paste', label: '粘贴' },
+      { role: 'selectAll', label: '全选' }
+    ])
+    contextMenu.popup({ window: mainWindow })
+  })
+
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
   })
@@ -127,11 +158,35 @@ function createWindow() {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  // 在页面加载完成后注入允许文本选择的 CSS 和 JavaScript
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.insertCSS(`
+      * {
+        -webkit-user-select: text !important;
+        user-select: text !important;
+      }
+    `).catch(err => console.error('插入 CSS 失败:', err));
+
+    mainWindow.webContents.executeJavaScript(`
+      document.addEventListener('selectstart', (e) => {
+        e.stopPropagation();
+      }, true);
+      
+      // 确保所有元素可以被选择
+      const style = document.createElement('style');
+      style.innerHTML = '* { user-select: text !important; -webkit-user-select: text !important; }';
+      document.head.appendChild(style);
+      
+      console.log('已启用文本选择功能');
+    `).catch(err => console.error('执行 JavaScript 失败:', err));
+  });
 }
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
+// 在 app.whenReady().then() 中添加
 app.whenReady().then(() => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
@@ -142,6 +197,12 @@ app.whenReady().then(() => {
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
+
+  // 添加复制到剪贴板的 IPC 处理程序
+  ipcMain.handle('copy-to-clipboard', (_, text) => {
+    require('electron').clipboard.writeText(text);
+    return true;
+  });
 
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
