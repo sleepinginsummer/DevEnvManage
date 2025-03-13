@@ -86,10 +86,11 @@ ipcMain.handle('run-cmd', async (_, command) => {
 function createWindow() {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 1200,  // 增加窗口宽度
-    height: 800,  // 增加窗口高度
+    width: 900,
+    height: 670,
     show: false,
     autoHideMenuBar: true,
+    icon: join(__dirname, '../../resources/icon.png'), // 添加这行配置
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -165,37 +166,50 @@ const { spawn } = require('child_process')
 // 添加 IPC 处理程序
 ipcMain.handle('run-powershell-realtime', async (event, command) => {
   return new Promise((resolve) => {
-    const powershell = spawn('powershell.exe', ['-Command', command], {
-      shell: true
-    })
-    
-    let stdoutData = ''
-    let stderrData = ''
-    
-    powershell.stdout.on('data', (data) => {
-      const output = data.toString()
-      stdoutData += output
-      // 发送实时输出到渲染进程
-      event.sender.send('powershell-output', output.trim())
-    })
-    
-    powershell.stderr.on('data', (data) => {
-      const output = data.toString()
-      stderrData += output
-      // 发送错误输出到渲染进程
-      event.sender.send('powershell-output', `错误: ${output.trim()}`)
-    })
-    
-    powershell.on('close', (code) => {
-      if (code === 0) {
-        resolve({ success: true, data: stdoutData })
-      } else {
-        resolve({ success: false, error: stderrData || '执行命令失败' })
-      }
-    })
-    
-    powershell.on('error', (error) => {
-      resolve({ success: false, error: error.message })
-    })
+    try {
+      const powershell = spawn('powershell.exe', ['-Command', command], {
+        shell: true
+      })
+      
+      // 获取进程ID
+      const processId = powershell.pid
+      console.log(`启动进程，PID: ${processId}，命令: ${command}`)
+      
+      let stdoutData = ''
+      let stderrData = ''
+      
+      powershell.stdout.on('data', (data) => {
+        const output = data.toString()
+        stdoutData += output
+        // 发送实时输出到渲染进程
+        event.sender.send('powershell-output', output.trim())
+      })
+      
+      powershell.stderr.on('data', (data) => {
+        const output = data.toString()
+        stderrData += output
+        // 发送错误输出到渲染进程
+        event.sender.send('powershell-output', `错误: ${output.trim()}`)
+      })
+      
+      powershell.on('close', (code) => {
+        console.log(`进程 ${processId} 已结束，退出码: ${code}`)
+        if (code === 0) {
+          resolve({ success: true, data: stdoutData, processId })
+        } else {
+          resolve({ success: false, error: stderrData || '执行命令失败', processId })
+        }
+      })
+      
+      powershell.on('error', (error) => {
+        console.error(`进程 ${processId} 发生错误:`, error.message)
+        resolve({ success: false, error: error.message, processId })
+      })
+    } catch (error) {
+      console.error('启动进程时发生错误:', error)
+      resolve({ success: false, error: error.message, processId: 0 })
+    }
   })
 })
+
+

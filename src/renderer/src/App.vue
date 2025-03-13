@@ -2,9 +2,9 @@
 import { ref } from 'vue'
 
 const menuItems = ref([
-  { name: '首页', path: '/' },
-  { name: '关于', path: '/about' },
-  { name: 'jdk版本控制', path: '/jdkVersion' }
+  { name: 'jdk版本控制', path: '/jdkVersion' },
+  // { name: '首页', path: '/' },
+  { name: '关于', path: '/about' }
 ])
 </script>
 
@@ -13,17 +13,12 @@ const menuItems = ref([
     <!-- 左侧菜单 -->
     <div class="sidebar">
       <nav>
-        <router-link
-          v-for="item in menuItems"
-          :key="item.path"
-          :to="item.path"
-          class="menu-item"
-        >
+        <router-link v-for="item in menuItems" :key="item.path" :to="item.path" class="menu-item">
           {{ item.name }}
         </router-link>
       </nav>
     </div>
-    
+
     <!-- 右侧内容区 -->
     <div class="content">
       <router-view></router-view>

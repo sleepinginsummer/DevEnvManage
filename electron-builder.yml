@@ -12,6 +12,7 @@ asarUnpack:
   - resources/**
 win:
   executableName: electron-app
+  icon: resources/icon.png  # 这里配置了图标路径
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}

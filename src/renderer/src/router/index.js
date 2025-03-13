@@ -3,8 +3,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 const routes = [
   {
     path: '/',
-    name: 'home',
-    component: () => import('../views/Home.vue')
+    redirect: '/jdkVersion'  // 添加重定向到 jdkVersion 页面
   },
   {
     path: '/about',

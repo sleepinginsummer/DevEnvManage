@@ -9,18 +9,32 @@ const api = {
 
 if (process.contextIsolated) {
   try {
+    // 在 contextBridge.exposeInMainWorld 中的 electron 对象中添加 terminate-process
     contextBridge.exposeInMainWorld('electron', {
       ...electronAPI,
       ipcRenderer: {
-        invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
-        on(channel, callback) {
-          const subscription = (_event, ...args) => callback(...args)
-          // 这里错误地使用了 electron.ipcRenderer，应该使用导入的 ipcRenderer
-          ipcRenderer.on(channel, subscription)
-          
-          return () => {
-            // 这里也错误地使用了 electron.ipcRenderer
-            ipcRenderer.removeListener(channel, subscription)
+        invoke: (channel, ...args) => {
+          const validChannels = [
+            'run-powershell', 
+            'run-powershell-window', 
+            'run-powershell-realtime'
+          ];
+          if (validChannels.includes(channel)) {
+            return ipcRenderer.invoke(channel, ...args);
+          }
+          return Promise.reject(new Error(`未授权的 IPC 通道: ${channel}`));
+        },
+        on: (channel, func) => {
+          const validChannels = ['powershell-output'];
+          if (validChannels.includes(channel)) {
+            // 转换 IPC 事件为函数回调
+            const subscription = (_event, ...args) => func(...args);
+            ipcRenderer.on(channel, subscription);
+            
+            // 返回一个清理函数，用于移除事件监听器
+            return () => {
+              ipcRenderer.removeListener(channel, subscription);
+            };
           }
         }
       }

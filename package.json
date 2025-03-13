@@ -38,8 +38,8 @@
     "vue": "^3.5.13"
   },
   "build": {
-    "appId": "com.your-name.jdk-manager",
-    "productName": "JDK Manager",
+    "appId": "com.syy.version-manager",
+    "productName": "Version Manager",
     "directories": {
       "output": "dist_electron"
     },
@@ -52,7 +52,7 @@
           ]
         }
       ],
-      "icon": "build/icon.ico",
+      "icon": "resources/icon.png",
       "artifactName": "${productName}-Setup-${version}.${ext}",
       "signAndEditExecutable": false
     },
