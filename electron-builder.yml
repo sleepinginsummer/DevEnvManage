@@ -1,8 +1,8 @@
 appId: com.syy.DevEnvManage
 productName: DevEnvManage
 directories:
-  buildResources: build    # 修改这里
-  output: dist_electron
+  buildResources: build
+  output: dist
 files:
   - '!**/.vscode/*'
   - '!src/*'
@@ -11,22 +11,32 @@ files:
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 win:
-  icon: resources/icon.ico  # 将PNG改为ICO格式
+  icon: './logo.ico'
   executableName: DevEnvManage
-  requestedExecutionLevel: asInvoker
+  # 添加以下配置禁用代码签名
+  sign: null
+  signAndEditExecutable: false
   target:
     - target: nsis
       arch:
         - x64
 asarUnpack:
   - resources/**
+  - build/**
+  - public/**
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
-  installerIcon: 'build/icon.ico'
-  uninstallerIcon: 'build/icon.ico'
+  installerIcon: 'build/logo.ico'
+  uninstallerIcon: 'build/logo.ico'
+  installerHeaderIcon: "build/logo.ico"
+    # 添加以下配置允许用户选择安装目录
+  allowToChangeInstallationDirectory: true
+   # 可选：修改安装类型为用户可选
+  oneClick: false
+
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:

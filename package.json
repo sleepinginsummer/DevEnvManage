@@ -13,7 +13,7 @@
     "build": "electron-vite build && electron-builder",
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
-    "build:win": "electron-vite build && electron-builder --win",
+    "build:win": "npm run build && electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac",
     "build:linux": "npm run build && electron-builder --linux",
     "electron:generate-icons": "electron-icon-builder --input=./resources/icon.png --output=build --flatten"
@@ -30,6 +30,7 @@
     "@electron-toolkit/eslint-config": "^2.0.0",
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@vitejs/plugin-vue": "^5.2.1",
+    "cross-env": "^7.0.3",
     "electron": "^34.2.0",
     "electron-builder": "^25.1.8",
     "electron-vite": "^3.0.0",
@@ -38,34 +39,5 @@
     "prettier": "^3.5.1",
     "vite": "^6.1.0",
     "vue": "^3.5.13"
-  },
-  "build": {
-    "appId": "com.syy.DevEnvManage",
-    "productName": "DevEnvManage",
-    "directories": {
-      "output": "dist_electron",
-      "buildResources": "build"
-    },
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
-      "icon": "resources/icon.png",
-      "artifactName": "${productName}-Setup-${version}.${ext}",
-      "signAndEditExecutable": false
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "allowElevation": true,
-      "perMachine": true
-    }
   }
 }
