@@ -7,8 +7,4 @@ out
 .vscode/extensions.json
 .vscode/launch.json
 .vscode/settings.json
-build/entitlements.mac.plist
-build/icon.icns
-build/icon.ico
-build/icon.png
 dist_electron/*

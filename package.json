@@ -1,6 +1,6 @@
 {
-  "name": "electron-app",
-  "version": "1.0.0",
+  "name": "dev-env-manage",
+  "version": "1.0.1",
   "description": "An Electron application with Vue",
   "main": "./out/main/index.js",
   "author": "example.com",
@@ -15,11 +15,13 @@
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "electron-vite build && electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac",
-    "build:linux": "npm run build && electron-builder --linux"
+    "build:linux": "npm run build && electron-builder --linux",
+    "electron:generate-icons": "electron-icon-builder --input=./resources/icon.png --output=build --flatten"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
+    "electron-icon-builder": "^2.0.1",
     "electron-updater": "^6.3.9",
     "element-plus": "^2.9.6",
     "vue-router": "^4.5.0"
@@ -38,10 +40,11 @@
     "vue": "^3.5.13"
   },
   "build": {
-    "appId": "com.syy.version-manager",
-    "productName": "Version Manager",
+    "appId": "com.syy.DevEnvManage",
+    "productName": "DevEnvManage",
     "directories": {
-      "output": "dist_electron"
+      "output": "dist_electron",
+      "buildResources": "build"
     },
     "win": {
       "target": [
