@@ -39,10 +39,7 @@
                             class="header-button">
                             添加 Python
                         </el-button>
-                        <!-- 添加代理设置按钮 -->
-                        <el-button v-if="isPyenvInstalled" @click="openProxyDialog" type="info" class="header-button">
-                            设置代理
-                        </el-button>
+                   
                     </template>
                 </div>
             </div>
@@ -142,32 +139,6 @@
                 </span>
             </template>
         </el-dialog>
-
-
-        <!-- 添加代理设置对话框 -->
-        <el-dialog v-model="showProxyDialog" title="设置 CMD 代理" width="50%">
-            <div class="proxy-settings">
-                <p>设置 CMD 代理可以加速 Python 下载安装过程。</p>
-                <el-form :model="proxyForm" label-width="120px">
-                    <el-form-item label="代理地址">
-                        <el-input v-model="proxyForm.host" placeholder="例如: 127.0.0.1"></el-input>
-                    </el-form-item>
-                    <el-form-item label="代理端口">
-                        <el-input v-model="proxyForm.port" placeholder="例如: 7890"></el-input>
-                    </el-form-item>
-                    <el-form-item>
-                        <el-checkbox v-model="proxyForm.enabled">启用代理</el-checkbox>
-                    </el-form-item>
-                </el-form>
-            </div>
-            <template #footer>
-                <span class="dialog-footer">
-                    <el-button @click="showProxyDialog = false">取消</el-button>
-                    <el-button type="primary" @click="saveProxySettings">保存</el-button>
-                </span>
-            </template>
-        </el-dialog>
-
     </div>
 
 
@@ -205,35 +176,19 @@ const installInProgress = ref(false)
 const logContentRef = ref(null)
 
 
-// 添加代理相关的状态变量
-const showProxyDialog = ref(false)
-const proxyForm = ref({
-    host: localStorage.getItem('cmdProxyHost') || '',
-    port: localStorage.getItem('cmdProxyPort') || '',
-    enabled: localStorage.getItem('cmdProxyEnabled') === 'true'
-})
 
-// 打开代理设置对话框
-function openProxyDialog() {
-    showProxyDialog.value = true
-}
 
-// 保存代理设置
-function saveProxySettings() {
-    // 保存到本地存储
-    localStorage.setItem('cmdProxyHost', proxyForm.value.host)
-    localStorage.setItem('cmdProxyPort', proxyForm.value.port)
-    localStorage.setItem('cmdProxyEnabled', proxyForm.value.enabled.toString())
 
-    // 显示成功消息
-    ElMessage.success('代理设置已保存')
-    showProxyDialog.value = false
-}
+
 
 // 获取代理字符串
 function getProxyString() {
-    if (proxyForm.value.enabled && proxyForm.value.host && proxyForm.value.port) {
-        return `http://${proxyForm.value.host}:${proxyForm.value.port}`
+    const host = localStorage.getItem('cmdProxyHost') || ''
+    const port = localStorage.getItem('cmdProxyPort') || ''
+    const enabled = localStorage.getItem('cmdProxyEnabled') === 'true'
+    
+    if (enabled && host && port) {
+        return `http://${host}:${port}`
     }
     return ''
 }
@@ -824,13 +779,5 @@ body {
     padding-right: 0 !important;
 }
 
-/* 代理设置对话框样式 */
-.proxy-settings {
-    padding: 10px 0;
-}
 
-.proxy-settings p {
-    margin-bottom: 20px;
-    color: #666;
-}
 </style>

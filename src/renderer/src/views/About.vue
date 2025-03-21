@@ -8,6 +8,7 @@
           <li>JDK版本控制使用scoop+powershell实现，可以自行安装或者通过本软件直接安装</li>
           <li>Python版本控制使用pyenv实现，需要自行安装。详见python版本控制页面</li>
           <li>NodeJS版本控制使用nvm实现，需要自行安装。详见nvm版本控制页面</li>
+          <li>如果安装scoop,jdk,python时遇到网络问题安装失败，可以在代理设置中配置代理</li>
         </ul>
       </div>
       <div class="github-section">

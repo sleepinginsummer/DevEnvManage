@@ -31,21 +31,11 @@
             <div class="skeleton-button"></div>
           </template>
           <template v-else>
-            <el-button 
-              v-if="!isScoopInstalled" 
-              @click="installScoop" 
-              :loading="installing"
-              type="primary"
-              class="header-button"
-            >
+            <el-button v-if="!isScoopInstalled" @click="installScoop" :loading="installing" type="primary"
+              class="header-button">
               {{ installing ? '安装中...' : '安装 Scoop' }}
             </el-button>
-            <el-button 
-              v-if="isScoopInstalled" 
-              @click="openInstallDialog"
-              type="primary"
-              class="header-button"
-            >
+            <el-button v-if="isScoopInstalled" @click="openInstallDialog" type="primary" class="header-button">
               添加 JDK
             </el-button>
           </template>
@@ -69,20 +59,11 @@
             </div>
           </div>
           <div class="jdk-actions">
-            <el-button 
-              @click="switchJdk(jdk.name)" 
-              :loading="switching"
-              type="primary"
-              size="default"
-            >
+            <el-button @click="switchJdk(jdk.name)" :loading="switching" type="primary" size="default">
               {{ switching ? '切换中...' : '切换' }}
             </el-button>
-            <el-button 
-              @click="uninstallJdk(jdk.name)"
-              :loading="isJdkUninstalling(jdk.name)"
-              type="danger"
-              size="default"
-            >
+            <el-button @click="uninstallJdk(jdk.name)" :loading="isJdkUninstalling(jdk.name)" type="danger"
+              size="default">
               {{ isJdkUninstalling(jdk.name) ? '卸载中...' : '卸载' }}
             </el-button>
           </div>
@@ -90,33 +71,19 @@
       </el-card>
     </div>
 
-    <el-dialog
-      v-model="showInstallDialog"
-      title="安装 JDK"
-      width="60%"
-      destroy-on-close
-      class="jdk-install-dialog"
-    >
+    <el-dialog v-model="showInstallDialog" title="安装 JDK" width="60%" destroy-on-close class="jdk-install-dialog">
       <div class="dialog-content">
-        <el-alert
-          v-if="checkingBucket || installingBucket"
-          :title="checkingBucket ? '检查 Java bucket...' : '添加 Java bucket...'"
-          type="info"
-          :closable="false"
-          show-icon
-        />
+        <el-alert v-if="checkingBucket || installingBucket"
+          :title="checkingBucket ? '检查 Java bucket...' : '添加 Java bucket...'" type="info" :closable="false" show-icon />
         <div v-else-if="loadingAvailableJdks" class="loading-container">
           <el-skeleton :rows="5" animated />
         </div>
         <div v-else class="jdk-search-content">
-          <el-input
-            v-model="searchQuery"
-            placeholder="搜索 JDK 名称或版本"
-            clearable
-            class="search-input"
-          >
+          <el-input v-model="searchQuery" placeholder="搜索 JDK 名称或版本" clearable class="search-input">
             <template #prefix>
-              <el-icon><Search /></el-icon>
+              <el-icon>
+                <Search />
+              </el-icon>
             </template>
           </el-input>
           <el-table :data="filteredJdks" style="width: 100%">
@@ -124,12 +91,8 @@
             <el-table-column prop="version" label="版本" />
             <el-table-column align="right">
               <template #default="scope">
-                <el-button
-                  type="primary"
-                  size="small"
-                  @click="installJdk(scope.row.name)"
-                  :loading="installingJdk === scope.row.name"
-                >
+                <el-button type="primary" size="small" @click="installJdk(scope.row.name)"
+                  :loading="installingJdk === scope.row.name">
                   {{ installingJdk === scope.row.name ? '安装中...' : '安装' }}
                 </el-button>
               </template>
@@ -143,15 +106,9 @@
         </span>
       </template>
     </el-dialog>
-     <!-- 添加新的日志对话框 -->
-     <el-dialog
-      v-model="showLogDialog"
-      title="安装日志"
-      width="70%"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="!installInProgress"
-    >
+    <!-- 添加新的日志对话框 -->
+    <el-dialog v-model="showLogDialog" title="安装日志" width="70%" :close-on-click-modal="false"
+      :close-on-press-escape="false" :show-close="!installInProgress">
       <div class="log-container">
         <pre class="log-content" ref="logContentRef">{{ installLog }}</pre>
       </div>
@@ -171,9 +128,15 @@ import { ElMessage } from 'element-plus'
 
 // Scoop相关命令统一管理
 const scoopCommands = {
+  // 修改版本检测命令，使用 which 或 Get-Command 检查 scoop 是否存在
   version: 'scoop --version',
-  installPolicy: 'Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force',
-  install: '& { iwr -useb get.scoop.sh | iex }',
+  // installPolicy: 'Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force',
+  // install: 'iwr -useb get.scoop.sh | iex',
+  // 添加合并的安装命令
+  installScoopFull: `
+    Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+    iex "& {$(irm get.scoop.sh)} -RunAsAdmin";
+  `,
   list: 'scoop list',
   reset: (jdkName) => `scoop reset ${jdkName}`,
   uninstall: (jdkName) => `scoop uninstall ${jdkName}`,
@@ -207,48 +170,106 @@ function closeLogDialog() {
   }
 }
 
+// 获取代理字符串
+function getProxyString() {
+  const host = localStorage.getItem('cmdProxyHost') || ''
+  const port = localStorage.getItem('cmdProxyPort') || ''
+  const enabled = localStorage.getItem('cmdProxyEnabled') === 'true'
+
+  if (enabled && host && port) {
+    return `http://${host}:${port}`
+  }
+  return ''
+}
+
 // 安装 JDK
 async function installJdk(jdkName) {
   installingJdk.value = jdkName
   installInProgress.value = true
   installLog.value = `开始安装 ${jdkName}...\n`
   showLogDialog.value = true
-  
+
   try {
+    // 清除之前可能存在的监听器
+    window.electron.ipcRenderer.removeAllListeners('cmd-output')
+    
     // 设置事件监听器接收实时日志
     const handleOutput = (data) => {
-      console.log('收到日志:', data)
-      installLog.value += data + '\n'
+      console.log('收到日志原始数据:', data)
+      
+      // 简化处理逻辑，直接将任何类型的数据转为字符串
+      if (data === null || data === undefined) {
+        return
+      }
+      
+      let logText = ''
+      if (typeof data === 'object') {
+        // 尝试提取有用信息
+        if (data.message) {
+          logText = data.message
+        } else if (data.data) {
+          logText = data.data
+        } else if (data.stdout) {
+          logText = data.stdout
+        } else {
+          try {
+            logText = JSON.stringify(data)
+          } catch (e) {
+            logText = '[复杂对象]'
+          }
+        }
+      } else {
+        logText = String(data)
+      }
+      
+      if (logText && logText.trim()) {
+        installLog.value += logText.trim() + '\n'
+        console.log('处理后的日志:', logText.trim())
+      }
     }
+    
     // 添加事件监听器
-    const removeListener = window.electron.ipcRenderer.on('powershell-output', handleOutput)
+    window.electron.ipcRenderer.on('cmd-output', handleOutput)
     console.log('已添加事件监听器')
-    // 使用新的方法执行带实时输出的命令
-    console.log('开始执行命令:', scoopCommands.installJdk(jdkName))
-    const result = await window.electron.ipcRenderer.invoke('run-powershell-realtime', scoopCommands.installJdk(jdkName))
-    console.log('命令执行结果:', result)
-    
-    // 移除事件监听器 - 使用返回的函数而不是直接调用removeListener
-    if (typeof removeListener === 'function') {
-      removeListener()
-      console.log('已移除事件监听器')
+
+    // 获取代理设置
+    const proxyString = getProxyString()
+    let installCommand = scoopCommands.installJdk(jdkName)
+
+    // 如果启用了代理，添加代理环境变量
+    if (proxyString) {
+      installLog.value += `使用代理: ${proxyString}\n`
+      installCommand = `set HTTP_PROXY=${proxyString} && set HTTPS_PROXY=${proxyString} && ${installCommand}`
     }
+
+    // 添加调试信息
+    installLog.value += `执行命令: ${installCommand}\n`
+    console.log('开始执行命令:', installCommand)
     
+    // 使用新的方法执行带实时输出的命令
+    const result = await window.electron.ipcRenderer.invoke('run-cmd-realtime', installCommand)
+    console.log('命令执行结果:', result)
+
+    // 移除事件监听器
+    window.electron.ipcRenderer.removeAllListeners('cmd-output')
+    console.log('已移除事件监听器')
+
     if (result.success) {
       await getJdkList()
       ElMessage.success('JDK 安装成功')
       installLog.value += '✅ 安装完成！\n'
     } else {
-      throw new Error(result.error)
+      throw new Error(result.error || '安装失败，未知错误')
     }
   } catch (error) {
     console.error('安装JDK时发生错误:', error)
     installLog.value += `❌ 安装失败: ${error.message}\n`
     ElMessage.error('安装 JDK 失败: ' + error.message)
   } finally {
+    // 确保在任何情况下都移除监听器
+    window.electron.ipcRenderer.removeAllListeners('cmd-output')
     installingJdk.value = ''
     installInProgress.value = false
-
   }
 }
 
@@ -261,22 +282,102 @@ watch(installLog, async () => {
 })
 // 检查 Scoop 安装状态
 async function checkScoopInstallation() {
-  const result = await window.electron.ipcRenderer.invoke('run-powershell', scoopCommands.version)
-  isScoopInstalled.value = result.success
+  const result = await window.electron.ipcRenderer.invoke('run-cmd', scoopCommands.version, false)
+  // 即使有 Git 错误信息，只要命令执行成功就认为 Scoop 已安装
+  isScoopInstalled.value = result.success && (
+    result.data.includes('scoop') ||
+    result.data.includes('Scoop') ||
+   
+    result.data.includes('.git') ||
+    result.error?.includes('.git') ||
+    result.error?.includes('not a git repository')
+  )
 }
 
-// 安装 Scoop
 async function installScoop() {
   installing.value = true
+  installInProgress.value = true
+  installLog.value = '开始安装 Scoop...\n'
+  showLogDialog.value = true
+
   try {
-    await window.electron.ipcRenderer.invoke('run-powershell', scoopCommands.installPolicy)
-    await window.electron.ipcRenderer.invoke('run-powershell', scoopCommands.install)
+    // 清除之前可能存在的监听器
+    window.electron.ipcRenderer.removeAllListeners('powershell-output')
+    
+    // 设置事件监听器接收实时日志
+    const handleOutput = (data) => {
+      console.log('收到Scoop安装日志原始数据:', data)
+      
+      // 简化处理逻辑，直接将任何类型的数据转为字符串
+      if (data === null || data === undefined) {
+        return
+      }
+      
+      let logText = ''
+      if (typeof data === 'object') {
+        // 尝试提取有用信息
+        if (data.message) {
+          logText = data.message
+        } else if (data.data) {
+          logText = data.data
+        } else if (data.stdout) {
+          logText = data.stdout
+        } else {
+          try {
+            logText = JSON.stringify(data)
+          } catch (e) {
+            logText = '[复杂对象]'
+          }
+        }
+      } else {
+        logText = String(data)
+      }
+      
+      if (logText && logText.trim()) {
+        installLog.value += logText.trim() + '\n'
+        console.log('处理后的日志:', logText.trim())
+      }
+    }
+    
+    // 添加事件监听器
+    window.electron.ipcRenderer.on('powershell-output', handleOutput)
+
+    // 获取代理设置
+    const proxyString = getProxyString()
+    let installCommand = scoopCommands.installScoopFull
+
+    // 如果启用了代理，添加代理环境变量
+    if (proxyString) {
+      installLog.value += `使用代理: ${proxyString}\n`
+      installCommand = `$env:HTTP_PROXY="${proxyString}"; $env:HTTPS_PROXY="${proxyString}"; ${installCommand}`
+    }
+
+    // 添加调试信息
+    installLog.value += `执行命令: ${installCommand}\n`
+    console.log('开始执行命令:', installCommand)
+
+    // 使用实时输出执行命令
+    const result = await window.electron.ipcRenderer.invoke('run-powershell-admin-realtime', installCommand)
+
+    // 移除事件监听器
+    window.electron.ipcRenderer.removeAllListeners('powershell-output')
+
     await checkScoopInstallation()
-    ElMessage.success('Scoop 安装成功')
+    if (isScoopInstalled.value) {
+      ElMessage.success('Scoop 安装成功')
+      installLog.value += '✅ 安装完成！\n'
+    } else {
+      throw new Error('安装后检测失败，可能需要配置代理或自行安装scoop，请检查日志')
+    }
   } catch (error) {
+    console.error('安装Scoop时发生错误:', error)
+    installLog.value += `❌ 安装失败: ${error.message}\n`
     ElMessage.error('安装 Scoop 失败: ' + error.message)
   } finally {
+    // 确保在任何情况下都移除监听器
+    window.electron.ipcRenderer.removeAllListeners('powershell-output')
     installing.value = false
+    installInProgress.value = false
   }
 }
 
@@ -284,7 +385,7 @@ async function installScoop() {
 async function getJdkList() {
   loading.value = true
   try {
-    const result = await window.electron.ipcRenderer.invoke('run-powershell', scoopCommands.list)
+    const result = await window.electron.ipcRenderer.invoke('run-cmd', scoopCommands.list, false)
     if (result.success) {
       jdkList.value = parseJdkList(result.data)
     }
@@ -299,7 +400,7 @@ async function getJdkList() {
 async function switchJdk(jdkName) {
   switching.value = true
   try {
-    const result = await window.electron.ipcRenderer.invoke('run-powershell', scoopCommands.reset(jdkName))
+    const result = await window.electron.ipcRenderer.invoke('run-powershell-admin', scoopCommands.reset(jdkName))
     if (!result.success) {
       throw new Error(result.error)
     }
@@ -316,7 +417,7 @@ async function switchJdk(jdkName) {
 async function getCurrentJavaVersion() {
   try {
     // 使用新的 PowerShell 会话获取 Java 版本
-    const result = await window.electron.ipcRenderer.invoke('run-powershell-window', scoopCommands.javaVersion)
+    const result = await window.electron.ipcRenderer.invoke('run-powershell-admin', scoopCommands.javaVersion)
     if (result.success) {
       currentJavaVersion.value = parseJavaVersion(result.data)
     }
@@ -326,21 +427,73 @@ async function getCurrentJavaVersion() {
 }
 
 // 解析 JDK 列表输出
-// 修改 parseJdkList 函数
+// 解析 JDK 列表输出
 function parseJdkList(output) {
+  // 检查是否返回"没有安装应用"的消息
+  if (output.includes("There aren't any apps installed")) {
+    return []
+  }
+  
   const lines = output.split('\n')
-  return lines
-    .filter(line => line.includes('jdk') || line.includes('java'))
-    .map(line => {
-      const parts = line.trim().split(/\s+/)
-      return {
-        name: parts[0] || '未知',
-        version: parts[1] || '未知',
-        source: parts[2] || '未知',
-        updated: parts[3]+" "+parts[4] || '未知',
-        info: parts[5] || '' // 将剩余部分作为 info
+  
+  // 过滤掉表头和空行
+  const jdkLines = lines.filter(line => 
+    (line.includes('jdk') || line.includes('java')) && 
+    !line.includes('Name') && 
+    !line.includes('----')
+  )
+  
+  return jdkLines.map(line => {
+    // 首先尝试提取名称（第一列，通常是以空格结尾的最长连续字符串）
+    const nameMatch = line.match(/^(\S+(?:-\S+)*)/);
+    const name = nameMatch ? nameMatch[1] : '未知';
+    
+    // 移除已提取的名称部分
+    let remaining = line.substring(name.length).trim();
+    
+    // 尝试提取版本（如果存在）- 版本通常是数字和点的组合
+    let version = '未知';
+    let source = '未知';
+    let dateTime = '';
+    let info = '';
+    
+    // 检查是否有版本信息
+    const versionMatch = remaining.match(/^\s*(\d+\.\d+[\.\d-]*\S*)/);
+    if (versionMatch) {
+      version = versionMatch[1];
+      remaining = remaining.substring(versionMatch[0].length).trim();
+      
+      // 尝试提取源（通常是单个单词）
+      const sourceMatch = remaining.match(/^\s*(\S+)/);
+      if (sourceMatch) {
+        source = sourceMatch[1];
+        remaining = remaining.substring(sourceMatch[0].length).trim();
       }
-    })
+    }
+    
+    // 尝试提取日期时间（格式通常为 YYYY-MM-DD HH:MM:SS）
+    const dateTimeMatch = remaining.match(/(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})/);
+    if (dateTimeMatch) {
+      dateTime = dateTimeMatch[1];
+      
+      // 提取剩余部分作为 info
+      const infoStartIndex = remaining.indexOf(dateTime) + dateTime.length;
+      if (infoStartIndex < remaining.length) {
+        info = remaining.substring(infoStartIndex).trim();
+      }
+    } else {
+      // 如果没有找到日期时间格式，将剩余部分作为 info
+      info = remaining;
+    }
+    
+    return {
+      name,
+      version,
+      source,
+      updated: dateTime || '未知',
+      info
+    };
+  });
 }
 
 // 解析 Java 版本输出
@@ -387,10 +540,20 @@ function closeInstallDialog() {
 async function checkAndAddJavaBucket() {
   checkingBucket.value = true
   try {
-    const result = await window.electron.ipcRenderer.invoke('run-powershell', scoopCommands.bucketList)
+    const result = await window.electron.ipcRenderer.invoke('run-cmd', scoopCommands.bucketList)
     if (!result.data.toLowerCase().includes('java')) {
       installingBucket.value = true
-      await window.electron.ipcRenderer.invoke('run-powershell', scoopCommands.bucketAdd)
+
+      // 获取代理设置
+      const proxyString = getProxyString()
+      let command = scoopCommands.bucketAdd
+
+      // 如果启用了代理，添加代理环境变量
+      if (proxyString) {
+        command = `set HTTP_PROXY=${proxyString} && set HTTPS_PROXY=${proxyString} && ${command}`
+      }
+
+      await window.electron.ipcRenderer.invoke('run-cmd', command)
     }
   } catch (error) {
     console.error('检查或添加 Java bucket 失败:', error)
@@ -404,7 +567,7 @@ async function checkAndAddJavaBucket() {
 async function loadAvailableJdks() {
   loadingAvailableJdks.value = true
   try {
-    const result = await window.electron.ipcRenderer.invoke('run-powershell', scoopCommands.search)
+    const result = await window.electron.ipcRenderer.invoke('run-cmd', scoopCommands.search)
     if (result.success) {
       availableJdks.value = parseAvailableJdks(result.data)
     }
@@ -435,10 +598,10 @@ const searchQuery = ref('')
 // 添加筛选计算属性
 const filteredJdks = computed(() => {
   if (!searchQuery.value) return availableJdks.value
-  
+
   const query = searchQuery.value.toLowerCase()
-  return availableJdks.value.filter(jdk => 
-    jdk.name.toLowerCase().includes(query) || 
+  return availableJdks.value.filter(jdk =>
+    jdk.name.toLowerCase().includes(query) ||
     jdk.version.toLowerCase().includes(query)
   )
 })
@@ -455,7 +618,7 @@ function isJdkUninstalling(jdkName) {
 async function uninstallJdk(jdkName) {
   uninstallingJdks.value.push(jdkName)
   try {
-    const result = await window.electron.ipcRenderer.invoke('run-powershell', scoopCommands.uninstall(jdkName))
+    const result = await window.electron.ipcRenderer.invoke('run-cmd', scoopCommands.uninstall(jdkName))
     if (result.success) {
       await getJdkList()
       ElMessage.success('JDK 卸载成功')
@@ -482,13 +645,15 @@ async function uninstallJdk(jdkName) {
 }
 
 /* 添加新的样式 */
-.version-info, .status-info {
+.version-info,
+.status-info {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.version-label, .status-label {
+.version-label,
+.status-label {
   white-space: nowrap;
 }
 
@@ -507,9 +672,11 @@ async function uninstallJdk(jdkName) {
   margin: 0;
   line-height: 1.5;
 }
+
 .jdk-actions {
   display: flex;
-  gap: -3px;  /* 从10px减小到5px */
+  gap: -3px;
+  /* 从10px减小到5px */
   align-items: center;
 }
 
@@ -518,33 +685,39 @@ async function uninstallJdk(jdkName) {
   padding: 8px 16px;
   font-size: 14px;
 }
+
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 30px;
-  min-height: 40px; /* 添加最小高度 */
+  min-height: 40px;
+  /* 添加最小高度 */
 }
 
 .current-version {
   font-size: 18px;
   font-weight: bold;
-  min-width: 200px; /* 添加最小宽度 */
+  min-width: 200px;
+  /* 添加最小宽度 */
 }
 
 .scoop-status {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-width: 250px; /* 添加最小宽度 */
+  min-width: 250px;
+  /* 添加最小宽度 */
 }
 
 .status-tag {
-  min-width: 120px; /* 添加最小宽度 */
+  min-width: 120px;
+  /* 添加最小宽度 */
 }
 
 .action-buttons {
-  min-width: 100px; /* 添加最小宽度 */
+  min-width: 100px;
+  /* 添加最小宽度 */
 }
 
 /* 添加按钮占位样式 */
@@ -600,10 +773,12 @@ async function uninstallJdk(jdkName) {
   margin-bottom: 20px;
   width: 100%;
 }
+
 /* 修改弹窗内容的样式 */
 :deep(.jdk-install-dialog .el-dialog__body) {
   padding: 0;
-  height: calc(70vh - 120px); /* 减去头部和底部的高度 */
+  height: calc(70vh - 120px);
+  /* 减去头部和底部的高度 */
 }
 
 .dialog-content {
@@ -629,7 +804,8 @@ async function uninstallJdk(jdkName) {
 
 :deep(.el-table__body-wrapper) {
   overflow-y: auto;
-  max-height: calc(100% - 40px); /* 减去表头高度 */
+  max-height: calc(100% - 40px);
+  /* 减去表头高度 */
 }
 
 /* 修改弹窗底部样式 */
@@ -661,7 +837,8 @@ async function uninstallJdk(jdkName) {
 /* 修改表格容器样式 */
 .el-table {
   flex: 1;
-  height: 0;  /* 关键修改：让表格自适应剩余空间 */
+  height: 0;
+  /* 关键修改：让表格自适应剩余空间 */
 }
 
 :deep(.el-table__body-wrapper) {
@@ -679,11 +856,13 @@ async function uninstallJdk(jdkName) {
 
 <style>
 /* 更全面的解决方案 - 修改滚动条显示 */
-html, body {
+html,
+body {
   overflow-x: hidden !important;
   margin-right: 0 !important;
   width: 100% !important;
-  overflow-y: hidden !important; /* 完全隐藏垂直滚动条 */
+  overflow-y: hidden !important;
+  /* 完全隐藏垂直滚动条 */
 }
 
 /* 防止弹窗影响布局 */

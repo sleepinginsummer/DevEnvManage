@@ -36,6 +36,8 @@ nsis:
   allowToChangeInstallationDirectory: true
    # 可选：修改安装类型为用户可选
   oneClick: false
+  # 添加此配置去掉用户选择界面，true表示始终为所有用户安装，false表示始终为当前用户安装
+  perMachine: true
 
 mac:
   entitlementsInherit: build/entitlements.mac.plist
