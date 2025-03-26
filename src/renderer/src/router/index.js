@@ -24,7 +24,12 @@ const routes = [
     path: '/proxySettings',
     name: 'proxySettings',
     component: () => import('../views/ProxySettings.vue')
-  },
+  }, 
+  {
+    path: '/nodeManage',
+    name: 'nodeManage',
+    component: () => import('../views/NodeManage.vue')
+  }
 ]
 
 const router = createRouter({

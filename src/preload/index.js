@@ -9,7 +9,7 @@ contextBridge.exposeInMainWorld('electron', electronAPI)
 contextBridge.exposeInMainWorld('api', {
   runPowerShell: (command, showWindow = false) => ipcRenderer.invoke('run-powershell', command, showWindow),
   // ... 其他现有方法 ...
-  
+
   // 添加日志相关的方法
   log: {
     info: (message) => log.info(message),
@@ -30,7 +30,9 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
       'get-log-path',  // Make sure this is included
       'restart-app',
       'copy-to-clipboard',
-      "run-powershell-admin"
+      "run-powershell-admin",
+      'save-to-file',
+      'load-from-file'
     ];
     if (validChannels.includes(channel)) {
       return ipcRenderer.invoke(channel, ...args);
@@ -43,7 +45,7 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
       // 转换 IPC 事件为函数回调
       const subscription = (_event, ...args) => func(...args);
       ipcRenderer.on(channel, subscription);
-  
+
       // 返回一个清理函数，用于移除事件监听器
       return () => {
         ipcRenderer.removeListener(channel, subscription);

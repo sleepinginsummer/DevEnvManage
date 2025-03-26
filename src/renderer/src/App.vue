@@ -4,6 +4,7 @@ import { ref } from 'vue'
 const menuItems = ref([
   { name: 'Jdk版本控制', path: '/jdkManage' },
   { name: 'Python版本控制', path: '/pythonManage' },
+  { name: 'node版本控制', path: '/nodeManage' },
   { name: '代理设置', path: '/proxySettings' },
   { name: '关于', path: '/about' }
 ])

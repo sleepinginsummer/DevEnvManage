@@ -137,45 +137,29 @@ ipcMain.handle('run-powershell', async (_, command, showErrorDialog = true) => {
 // 添加 run-cmd 处理程序
 // 修改 run-cmd 处理程序，添加 showErrorDialog 参数
 ipcMain.handle('run-cmd', async (_, command, showErrorDialog = true) => {
-  log.info(`Executing CMD command: ${command}`)
-  console.log(`Executing CMD command: ${command}`)
-  return new Promise((resolve) => {
-    exec(command, { shell: 'cmd.exe', encoding: 'utf8' }, (error, stdout, stderr) => {
-      if (error) {
-        // 记录错误到日志
-        log.error(`CMD execution error: ${error.message}`)
-        console.log(`CMD execution error: ${error.message}`)
-        log.error(`CMD stderr output: ${stderr}`)
-        console.log(`CMD stderr output: ${stderr}`)
-
-        // 只有当 showErrorDialog 为 true 时才显示错误对话框
-        if (showErrorDialog) {
-          dialog.showErrorBox('CMD Execution Error', `Error executing command "${command}":\n${error.message}`)
-        }
-
-        resolve({
-          success: false,
-          error: error.message,
-          data: stderr
-        })
-      } else {
-
-        // 记录成功信息到日志
-        log.info('CMD execution successful')
-        console.log('CMD execution successful')
-        log.info(`CMD stdout: ${stdout}`)
-        console.log(`CMD stdout: ${stdout}`)
-        if (stderr) {
-          log.info(`CMD stderr: ${stderr}`)
-          console.log(`CMD stderr: ${stderr}`)
-        }
-        resolve({
-          success: true,
-          data: stderr || stdout // java -version 输出到 stderr
-        })
-      }
-    })
-  })
+  try {
+    // 使用 cmd /c 前缀确保在 CMD 环境中运行
+    const fullCommand = `cmd /c "${command}"`
+    const { stdout, stderr } = await execAsync(fullCommand)
+    log.info(`NVM command executed: ${command}`)
+    console.log(`NVM command executed: ${command}`)
+    log.info(`NVM stdout: ${stdout}`)
+    console.log(`NVM stdout: ${stdout}`)
+    
+    if (stderr) {
+      log.warn(`NVM stderr: ${stderr}`)
+      console.log(`NVM stderr: ${stderr}`)
+    }
+    
+    return { success: true, data: stdout || stderr }
+  } catch (error) {
+    log.error(`NVM command failed: ${command}`)
+    console.log(`NVM command failed: ${command}`)
+    log.error(`Error: ${error.message}`)
+    console.log(`Error: ${error.message}`)
+    
+    return { success: false, error: error.message }
+  }
 })
 
 function createWindow() {
@@ -601,5 +585,42 @@ app.on('quit', () => {
   log.info('应用退出')
   console.log('应用退出')
 })
+
+// 获取应用数据目录
+const getAppDataPath = () => {
+  return app.getPath('userData')
+}
+
+// 处理文件保存
+ipcMain.handle("save-to-file", async (event, { filePath, data }) => {
+  try {
+    const appDataPath = getAppDataPath();
+    const fullPath = join(appDataPath, filePath);
+    const dir = dirname(fullPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    fs.writeFileSync(fullPath, data, "utf8");
+    return { success: true };
+  } catch (error) {
+    console.error("保存文件失败:", error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle("load-from-file", async (event, { filePath }) => {
+  try {
+    const appDataPath = getAppDataPath();
+    const fullPath = join(appDataPath, filePath);
+    if (!fs.existsSync(fullPath)) {
+      return { success: false, error: "File not found" };
+    }
+    const data = fs.readFileSync(fullPath, "utf8");
+    return { success: true, data };
+  } catch (error) {
+    console.error("读取文件失败:", error);
+    return { success: false, error: error.message };
+  }
+});
 
 
