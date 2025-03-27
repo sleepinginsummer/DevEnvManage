@@ -4,12 +4,14 @@
             <el-tabs v-model="activeTab" class="python-tabs" tab-position="top">
                 <el-tab-pane label="Python版本管理" name="version"></el-tab-pane>
                 <el-tab-pane label="Python加速域名" name="tools"></el-tab-pane>
+                <el-tab-pane label="包管理" name="packages"></el-tab-pane>
             </el-tabs>
         </div>
         
         <div class="tab-content">
             <PythonVersionManage v-if="activeTab === 'version'" />
             <PythonMirrorConfig v-else-if="activeTab === 'tools'" />
+            <PythonPackageManage v-else-if="activeTab === 'packages'" />
         </div>
     </div>
 </template>
@@ -18,6 +20,7 @@
 import { ref } from 'vue'
 import PythonVersionManage from './PythonVersionManage.vue'
 import PythonMirrorConfig from './PythonMirrorConfig.vue'
+import PythonPackageManage from './PythonPackageManage.vue'
 
 const activeTab = ref('version')
 </script>

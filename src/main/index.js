@@ -141,22 +141,22 @@ ipcMain.handle('run-cmd', async (_, command, showErrorDialog = true) => {
     // 使用 cmd /c 前缀确保在 CMD 环境中运行
     const fullCommand = `cmd /c "${command}"`
     const { stdout, stderr } = await execAsync(fullCommand)
-    log.info(`NVM command executed: ${command}`)
-    console.log(`NVM command executed: ${command}`)
-    log.info(`NVM stdout: ${stdout}`)
-    console.log(`NVM stdout: ${stdout}`)
+    log.info(`run-cmd executed: ${command}`)
+    console.log(`run-cmd executed: ${command}`)
+    log.info(`run-cmd stdout: ${stdout}`)
+    console.log(`run-cmd stdout: ${stdout}`)
     
     if (stderr) {
-      log.warn(`NVM stderr: ${stderr}`)
-      console.log(`NVM stderr: ${stderr}`)
+      log.warn(`run-cmd stderr: ${stderr}`)
+      console.log(`run-cmd stderr: ${stderr}`)
     }
     
     return { success: true, data: stdout || stderr }
   } catch (error) {
-    log.error(`NVM command failed: ${command}`)
-    console.log(`NVM command failed: ${command}`)
-    log.error(`Error: ${error.message}`)
-    console.log(`Error: ${error.message}`)
+    log.error(`run-cmd command failed: ${command}`)
+    console.log(`run-cmd command failed: ${command}`)
+    log.error(`run-cmd Error: ${error.message}`)
+    console.log(`run-cmd Error: ${error.message}`)
     
     return { success: false, error: error.message }
   }
